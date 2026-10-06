@@ -1,72 +1,59 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0a0b0a">
-<title>FIT CULTURE — Management</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0c0e"><title>FIT CULTURE — Gym Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="toast" aria-live="polite"></div>
+<div id="toast" class="toast"></div>
+<div id="loader" class="loader hidden"><div class="spinner"></div><span>Loading FIT CULTURE…</span></div>
 
-<section id="loginView" class="login-shell">
-  <div class="login-brand"><span class="brand-dot"></span>FIT <b>CULTURE</b></div>
-  <div class="login-decoration dec-one"></div><div class="login-decoration dec-two"></div>
-  <div class="login-hero">
-    <div class="hero-badge"><span></span> FITNESS MANAGEMENT SYSTEM</div>
-    <h1>Run your gym.<br><em>Better.</em></h1>
-    <p>Members, trainers, memberships, sessions and payments — all in one clean workspace.</p>
-    <div class="hero-metrics"><div><strong>01</strong><span>Members</span></div><div><strong>02</strong><span>Trainers</span></div><div><strong>03</strong><span>Sessions</span></div></div>
-    <div class="hero-line"><span>FIT CULTURE</span><span>TILAKNAGAR · MUMBAI</span></div>
-  </div>
-  <div class="login-side">
-    <div class="login-card">
-      <div class="mobile-brand"><span class="brand-dot"></span>FIT <b>CULTURE</b></div>
-      <div class="login-heading"><span class="mini-icon">FC</span><div><p class="eyebrow">SECURE ACCESS</p><h2>Welcome back</h2></div></div>
-      <p class="muted login-copy">Sign in to your FIT CULTURE workspace.</p>
-      <form id="loginForm" autocomplete="on">
-        <label>Email address<input id="email" name="email" type="email" autocomplete="username" required placeholder="you@example.com"></label>
-        <label>Password<div class="pass"><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"><button type="button" id="togglePass">Show</button></div></label>
-        <button class="primary wide" type="submit">Sign in <span>↗</span></button>
-      </form>
-      <div class="secure-note"><i></i> Your account is protected</div>
+<section id="loginView" class="login-page">
+  <div class="login-showcase">
+    <div class="brand"><span class="brand-dot"></span>FIT CULTURE</div>
+    <div class="showcase-copy">
+      <div class="micro">TILAKNAGAR · MUMBAI</div>
+      <h1>BUILT FOR<br><em>BETTER.</em></h1>
+      <p>One calm, powerful workspace for the people who run the gym, coach the members and live the progress.</p>
     </div>
-    <p class="login-bottom">PRIVATE GYM WORKSPACE · FIT CULTURE</p>
+    <div class="showcase-footer"><span>FITNESS MANAGEMENT</span><span>01 / 03</span></div>
+    <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+  </div>
+  <div class="login-panel">
+    <div class="mobile-brand"><span class="brand-dot"></span>FIT CULTURE</div>
+    <div class="login-inner">
+      <div class="login-heading"><div class="micro">MEMBER PORTAL</div><h2>Welcome back.</h2><p>Sign in to continue to your workspace.</p></div>
+      <form id="loginForm" class="form-stack">
+        <label>Email address<input id="email" type="email" autocomplete="username" placeholder="name@fitculture.in" required></label>
+        <label>Password<div class="password-wrap"><input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" id="togglePass">Show</button></div></label>
+        <button class="btn btn-primary btn-lg" type="submit">Sign in <span>↗</span></button>
+      </form>
+      <div class="login-note"><span class="status-dot"></span>Secure access · Admin · Trainer · Client</div>
+    </div>
+    <div class="login-bottom"><span>FIT CULTURE</span><span>Private gym management</span></div>
   </div>
 </section>
 
 <section id="appView" class="app hidden">
-  <aside class="sidebar">
-    <div class="side-brand"><div class="brand-word"><span class="brand-dot"></span>FIT <b>CULTURE</b></div><div class="side-sub">GYM MANAGEMENT</div></div>
-    <div class="role-pill" id="rolePill">ACCOUNT</div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top"><div class="brand"><span class="brand-dot"></span>FIT CULTURE</div><button class="icon-btn mobile-close" id="closeSidebar">×</button></div>
+    <div class="workspace"><span class="workspace-label">WORKSPACE</span><strong id="workspaceRole">ADMIN</strong></div>
     <nav id="nav"></nav>
-    <div class="side-bottom"><div class="mini-status"><i></i><span>All systems operational</span></div><button id="logout" class="logout">↪ <span>Sign out</span></button></div>
+    <div class="sidebar-bottom"><div class="support-card"><span>FIT CULTURE</span><b>Run the gym. <br>Not the chaos.</b></div><button id="logout" class="signout">↪ Sign out</button></div>
   </aside>
-  <main class="main">
-    <header class="topbar">
-      <div class="mobile-menu"><button id="mobileNavBtn" class="icon-btn">☰</button></div>
-      <div><p class="eyebrow" id="pageKicker">GYM MANAGEMENT</p><h1 id="pageTitle">Overview</h1></div>
-      <div class="userbox"><div class="avatar" id="avatar">FC</div><div class="user-meta"><b id="userName">User</b><span id="userRole">Role</span></div></div>
-    </header>
-    <div id="content"></div>
-  </main>
+  <div class="main-shell">
+    <header class="topbar"><button class="icon-btn menu-btn" id="openSidebar">☰</button><div><div class="micro" id="pageKicker">GYM MANAGEMENT</div><h1 id="pageTitle">Overview</h1></div><div class="top-actions"><button class="icon-btn" id="refreshBtn" title="Refresh">↻</button><div class="user-menu"><div class="avatar" id="avatar">FC</div><div class="user-copy"><b id="userName">User</b><span id="userRole">Role</span></div></div></div></header>
+    <main id="content" class="content"></main>
+  </div>
 </section>
 
-<div id="modal" class="modal hidden"><div class="modal-backdrop" data-close-modal></div><div class="modal-card"><div class="modal-head"><div><p class="eyebrow" id="modalKicker">FIT CULTURE</p><h3 id="modalTitle">Add record</h3></div><button class="icon-btn" data-close-modal>×</button></div><div id="modalBody"></div></div></div>
+<div id="modal" class="modal hidden"><div class="modal-backdrop" data-close-modal></div><div class="modal-card"><div class="modal-head"><div><div class="micro" id="modalKicker">FORM</div><h2 id="modalTitle">Add record</h2></div><button class="icon-btn" data-close-modal>×</button></div><div id="modalBody"></div></div></div>
 
-<template id="adminNav">
-  <button data-page="dashboard"><span>01</span>Overview</button><button data-page="clients"><span>02</span>Clients</button><button data-page="trainers"><span>03</span>Trainers</button><button data-page="memberships"><span>04</span>Memberships</button><button data-page="payments"><span>05</span>Payments</button><button data-page="reviews"><span>06</span>Reviews</button>
-</template>
-<template id="trainerNav">
-  <button data-page="dashboard"><span>01</span>Overview</button><button data-page="clients"><span>02</span>My Clients</button><button data-page="sessions"><span>03</span>Sessions</button>
-</template>
-<template id="clientNav">
-  <button data-page="dashboard"><span>01</span>My Dashboard</button><button data-page="profile"><span>02</span>My Profile</button><button data-page="sessions"><span>03</span>My Sessions</button><button data-page="payments"><span>04</span>Payments</button><button data-page="review"><span>05</span>Write Review</button>
-</template>
+<template id="adminNav"><button data-page="dashboard" class="nav-item"><span>⌂</span>Overview</button><button data-page="clients" class="nav-item"><span>◉</span>Clients</button><button data-page="trainers" class="nav-item"><span>♙</span>Trainers</button><button data-page="memberships" class="nav-item"><span>◇</span>Memberships</button><button data-page="payments" class="nav-item"><span>₹</span>Payments</button><button data-page="sessions" class="nav-item"><span>↻</span>Sessions</button><button data-page="reviews" class="nav-item"><span>★</span>Reviews</button><button data-page="reports" class="nav-item"><span>▥</span>Reports</button></template>
+<template id="trainerNav"><button data-page="dashboard" class="nav-item"><span>⌂</span>Overview</button><button data-page="clients" class="nav-item"><span>◉</span>My Clients</button><button data-page="sessions" class="nav-item"><span>↻</span>Sessions</button><button data-page="payments" class="nav-item"><span>₹</span>Expected Payments</button><button data-page="profile" class="nav-item"><span>◎</span>My Profile</button></template>
+<template id="clientNav"><button data-page="dashboard" class="nav-item"><span>⌂</span>My Dashboard</button><button data-page="profile" class="nav-item"><span>◎</span>My Profile</button><button data-page="sessions" class="nav-item"><span>↻</span>My Sessions</button><button data-page="payments" class="nav-item"><span>₹</span>Payments</button><button data-page="review" class="nav-item"><span>★</span>Write Review</button></template>
 <script type="module" src="js/app.js"></script>
-</body>
-</html>
+</body></html>

@@ -1,29 +1,20 @@
-# FIT CULTURE Gym Management
+# FIT CULTURE — Gym Management System
 
-Custom Firebase-ready gym management web app. No website builder required.
+Custom Firebase-ready gym management web app. No poster or external image dependency.
 
-## Firebase setup
-1. Firebase Console → Authentication → Sign-in method → enable Email/Password.
-2. Firebase Console → Firestore Database → Create database.
-3. Create an Authentication user for the first admin.
-4. Copy that user's UID.
-5. Firestore → collection `users` → document ID = that UID.
-6. Add fields:
-   - `name`: `FIT CULTURE Admin`
-   - `role`: `admin`
-7. Open the site and sign in with that Firebase Authentication email/password.
+## Firebase
+The Web App configuration is already placed in `js/app.js` from the configuration supplied for this project.
 
-## Other roles
-Create a Firebase Authentication user, then add a `users/{UID}` document with:
-- `name`: person's name
-- `role`: `trainer` or `client`
+1. Firebase Authentication → Sign-in method → Email/Password → Enable.
+2. Firestore Database → Create database.
+3. Create an Authentication user.
+4. In Firestore create `users/{AUTH_UID}` with `name` and `role` (`admin`, `trainer`, or `client`).
+5. Publish `firestore.rules` in Firebase.
 
-For a client, create a document in `clients` with the same `email` as the Firebase Authentication account, or set `userId` to the Firebase UID.
+For client login, create a Firestore `clients` document with `userId` equal to that Firebase Authentication UID.
 
-## Firestore collections used
-`users`, `clients`, `trainers`, `memberships`, `payments`, `sessions`, `reviews`.
+## Hosting
+This is a static site. It can be hosted on Firebase Hosting, Vercel, Netlify, GitHub Pages, or another static host.
 
-## Notes
-- The Firebase web configuration is in `js/app.js`.
-- Do not put a Firebase service-account private key in the website.
-- Deploy the folder as a static site or use any static hosting service.
+## Note
+Firebase Web configuration values are intended for client-side use. Never put a Firebase service-account private key in this project.
