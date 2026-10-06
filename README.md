@@ -1,20 +1,26 @@
 # FIT CULTURE — Gym Management System
 
-Custom Firebase-ready gym management web app. No poster or external image dependency.
+Premium Firebase-ready gym management web app.
+
+## Roles
+- Admin
+- Trainer
+- Client
+
+## Included
+- Authentication
+- Role-based dashboards
+- Client management
+- Trainer management
+- Memberships
+- PT sessions
+- Payments
+- Gym timing
+- Reviews
+- Reports
+- Responsive mobile UI
 
 ## Firebase
-The Web App configuration is already placed in `js/app.js` from the configuration supplied for this project.
+Update `js/app.js` with your Firebase web configuration if needed, enable Email/Password Authentication and Firestore, then create the first admin user according to your Firebase setup.
 
-1. Firebase Authentication → Sign-in method → Email/Password → Enable.
-2. Firestore Database → Create database.
-3. Create an Authentication user.
-4. In Firestore create `users/{AUTH_UID}` with `name` and `role` (`admin`, `trainer`, or `client`).
-5. Publish `firestore.rules` in Firebase.
-
-For client login, create a Firestore `clients` document with `userId` equal to that Firebase Authentication UID.
-
-## Hosting
-This is a static site. It can be hosted on Firebase Hosting, Vercel, Netlify, GitHub Pages, or another static host.
-
-## Note
-Firebase Web configuration values are intended for client-side use. Never put a Firebase service-account private key in this project.
+No demo account is included.
