@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() {
+      return signedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+    function isAdmin() { return role() == 'admin'; }
+    function isTrainer() { return role() == 'trainer'; }
+    function isClient() { return role() == 'client'; }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /clients/{id} {
+      allow read: if isAdmin()
+        || (isTrainer() && resource.data.trainerId == request.auth.uid)
+        || (isClient() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+      allow update: if isTrainer() && resource.data.trainerId == request.auth.uid;
+    }
+
+    match /trainers/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /memberships/{id} {
+      allow read: if isAdmin()
+        || (isClient() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    match /payments/{id} {
+      allow read: if isAdmin()
+        || (isClient() && (resource.data.clientId == request.auth.uid || resource.data.clientEmail == request.auth.token.email));
+      allow write: if isAdmin();
+    }
+
+    match /sessions/{id} {
+      allow read: if isAdmin()
+        || (isTrainer() && resource.data.trainerId == request.auth.uid)
+        || (isClient() && resource.data.clientId == request.auth.uid);
+      allow create, update: if isAdmin() || isTrainer();
+    }
+
+    match /reviews/{id} {
+      allow read: if isAdmin();
+      allow create: if isClient();
+      allow update, delete: if isAdmin();
+    }
+  }
+}
