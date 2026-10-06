@@ -1,39 +1,29 @@
-# FIT CULTURE — Gym Management System
+# FIT CULTURE Gym Management
 
-A custom Firebase-ready gym management web app built without Lovable.
-
-## Included
-- Premium FIT CULTURE dark/lime responsive interface
-- Firebase Email/Password login
-- Role-based Admin / Trainer / Client workspaces
-- Admin dashboard, client directory, trainer roster, memberships, payments and reviews
-- Add/edit/delete client records
-- Add trainers, memberships and payment records
-- Trainer assigned-client workspace and session completion
-- Client dashboard, profile, sessions, payments and review submission
-- Firestore security rules
+Custom Firebase-ready gym management web app. No website builder required.
 
 ## Firebase setup
 1. Firebase Console → Authentication → Sign-in method → enable Email/Password.
 2. Firebase Console → Firestore Database → Create database.
-3. Project Settings → Your apps → Web app.
-4. The supplied Firebase web configuration is already placed in `js/app.js`.
-5. Create an Authentication user for the gym admin.
-6. In Firestore create `users/{AUTH_USER_UID}` with:
-   `{ "name": "FIT CULTURE Admin", "role": "admin" }`
-7. Publish `firestore.rules` from this folder in Firestore Rules.
-8. Deploy the folder to Vercel/Netlify/GitHub Pages.
+3. Create an Authentication user for the first admin.
+4. Copy that user's UID.
+5. Firestore → collection `users` → document ID = that UID.
+6. Add fields:
+   - `name`: `FIT CULTURE Admin`
+   - `role`: `admin`
+7. Open the site and sign in with that Firebase Authentication email/password.
 
-For trainers/clients, create their Authentication accounts and then create matching `users/{UID}` documents. Link a client record with `userId` equal to the client's Firebase Authentication UID. Link trainer-owned client records with `trainerId` equal to the trainer's Firebase Authentication UID.
+## Other roles
+Create a Firebase Authentication user, then add a `users/{UID}` document with:
+- `name`: person's name
+- `role`: `trainer` or `client`
 
-## Collections
-- users
-- clients
-- trainers
-- memberships
-- payments
-- sessions
-- reviews
+For a client, create a document in `clients` with the same `email` as the Firebase Authentication account, or set `userId` to the Firebase UID.
 
-## Important
-The website does not display Firebase configuration, Storage, database setup details, or developer instructions to gym users. Firebase is only the backend layer.
+## Firestore collections used
+`users`, `clients`, `trainers`, `memberships`, `payments`, `sessions`, `reviews`.
+
+## Notes
+- The Firebase web configuration is in `js/app.js`.
+- Do not put a Firebase service-account private key in the website.
+- Deploy the folder as a static site or use any static hosting service.

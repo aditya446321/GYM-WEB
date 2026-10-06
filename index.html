@@ -1,51 +1,50 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b09">
-<title>FIT CULTURE — Gym Management</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0a">
+<title>FIT CULTURE — Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="toast" aria-live="polite"></div>
 
 <section id="loginView" class="login-shell">
-  <div class="login-visual">
-    <div class="visual-top"><div class="brand-mark">FIT<span>CULTURE</span></div><div class="location-tag">TILAKNAGAR · MUMBAI</div></div>
-    <div class="visual-copy">
-      <p class="eyebrow">PREMIUM FITNESS DESTINATION</p>
-      <h1>TRAIN.<br>TRACK.<br><span>TRANSFORM.</span></h1>
-      <p class="visual-sub">One premium workspace for your gym team, trainers and members.</p>
-      <div class="feature-row"><span>01 Strength</span><span>02 HYROX</span><span>03 Cardio</span><span>04 Recovery</span></div>
-    </div>
-    <div class="visual-footer"><span>FIT CULTURE</span><span>NOT JUST A GYM.</span></div>
+  <div class="login-brand"><span class="brand-dot"></span>FIT <b>CULTURE</b></div>
+  <div class="login-decoration dec-one"></div><div class="login-decoration dec-two"></div>
+  <div class="login-hero">
+    <div class="hero-badge"><span></span> FITNESS MANAGEMENT SYSTEM</div>
+    <h1>Run your gym.<br><em>Better.</em></h1>
+    <p>Members, trainers, memberships, sessions and payments — all in one clean workspace.</p>
+    <div class="hero-metrics"><div><strong>01</strong><span>Members</span></div><div><strong>02</strong><span>Trainers</span></div><div><strong>03</strong><span>Sessions</span></div></div>
+    <div class="hero-line"><span>FIT CULTURE</span><span>TILAKNAGAR · MUMBAI</span></div>
   </div>
   <div class="login-side">
     <div class="login-card">
-      <div class="mobile-brand">FIT<span>CULTURE</span></div>
-      <div class="login-icon">FC</div>
-      <p class="eyebrow">MEMBER PORTAL</p>
-      <h2>Welcome back.</h2>
-      <p class="muted">Sign in to continue to your FIT CULTURE workspace.</p>
+      <div class="mobile-brand"><span class="brand-dot"></span>FIT <b>CULTURE</b></div>
+      <div class="login-heading"><span class="mini-icon">FC</span><div><p class="eyebrow">SECURE ACCESS</p><h2>Welcome back</h2></div></div>
+      <p class="muted login-copy">Sign in to your FIT CULTURE workspace.</p>
       <form id="loginForm" autocomplete="on">
-        <label>Email address<input id="email" name="email" type="email" autocomplete="username" required placeholder="name@example.com"></label>
-        <label>Password<div class="pass"><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter password"><button type="button" id="togglePass">Show</button></div></label>
-        <button class="primary wide" type="submit">Sign in <span>→</span></button>
+        <label>Email address<input id="email" name="email" type="email" autocomplete="username" required placeholder="you@example.com"></label>
+        <label>Password<div class="pass"><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"><button type="button" id="togglePass">Show</button></div></label>
+        <button class="primary wide" type="submit">Sign in <span>↗</span></button>
       </form>
-      <div class="secure-note"><span>●</span> Secure sign-in</div>
+      <div class="secure-note"><i></i> Your account is protected</div>
     </div>
-    <p class="login-bottom">FIT CULTURE · PREMIUM FITNESS EXPERIENCE</p>
+    <p class="login-bottom">PRIVATE GYM WORKSPACE · FIT CULTURE</p>
   </div>
 </section>
 
 <section id="appView" class="app hidden">
   <aside class="sidebar">
-    <div class="side-brand"><div class="brand-mark">FIT<span>CULTURE</span></div><div class="location-tag">TILAKNAGAR</div></div>
+    <div class="side-brand"><div class="brand-word"><span class="brand-dot"></span>FIT <b>CULTURE</b></div><div class="side-sub">GYM MANAGEMENT</div></div>
     <div class="role-pill" id="rolePill">ACCOUNT</div>
     <nav id="nav"></nav>
-    <div class="side-bottom"><div class="mini-status"><i></i><span>System online</span></div><button id="logout" class="logout">↪ <span>Sign out</span></button></div>
+    <div class="side-bottom"><div class="mini-status"><i></i><span>All systems operational</span></div><button id="logout" class="logout">↪ <span>Sign out</span></button></div>
   </aside>
   <main class="main">
     <header class="topbar">
@@ -60,24 +59,14 @@
 <div id="modal" class="modal hidden"><div class="modal-backdrop" data-close-modal></div><div class="modal-card"><div class="modal-head"><div><p class="eyebrow" id="modalKicker">FIT CULTURE</p><h3 id="modalTitle">Add record</h3></div><button class="icon-btn" data-close-modal>×</button></div><div id="modalBody"></div></div></div>
 
 <template id="adminNav">
-  <button data-page="dashboard"><span>⌂</span>Overview</button>
-  <button data-page="clients"><span>♙</span>Clients</button>
-  <button data-page="trainers"><span>♜</span>Trainers</button>
-  <button data-page="memberships"><span>◇</span>Memberships</button>
-  <button data-page="payments"><span>₹</span>Payments</button>
-  <button data-page="reviews"><span>★</span>Reviews</button>
+  <button data-page="dashboard"><span>01</span>Overview</button><button data-page="clients"><span>02</span>Clients</button><button data-page="trainers"><span>03</span>Trainers</button><button data-page="memberships"><span>04</span>Memberships</button><button data-page="payments"><span>05</span>Payments</button><button data-page="reviews"><span>06</span>Reviews</button>
 </template>
 <template id="trainerNav">
-  <button data-page="dashboard"><span>⌂</span>Overview</button>
-  <button data-page="clients"><span>♙</span>My Clients</button>
-  <button data-page="sessions"><span>✓</span>Sessions</button>
+  <button data-page="dashboard"><span>01</span>Overview</button><button data-page="clients"><span>02</span>My Clients</button><button data-page="sessions"><span>03</span>Sessions</button>
 </template>
 <template id="clientNav">
-  <button data-page="dashboard"><span>⌂</span>My Dashboard</button>
-  <button data-page="profile"><span>♙</span>My Profile</button>
-  <button data-page="sessions"><span>✓</span>My Sessions</button>
-  <button data-page="payments"><span>₹</span>Payments</button>
-  <button data-page="review"><span>★</span>Write Review</button>
+  <button data-page="dashboard"><span>01</span>My Dashboard</button><button data-page="profile"><span>02</span>My Profile</button><button data-page="sessions"><span>03</span>My Sessions</button><button data-page="payments"><span>04</span>Payments</button><button data-page="review"><span>05</span>Write Review</button>
 </template>
 <script type="module" src="js/app.js"></script>
-</body></html>
+</body>
+</html>
