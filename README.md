@@ -1,38 +1,39 @@
 # FIT CULTURE — Gym Management System
 
-A Firebase-ready gym management dashboard built without Lovable. It implements the roles and modules from the supplied specification:
-- Admin: clients, trainers, memberships, payments, reviews, dashboard
-- Trainer: assigned clients and sessions
-- Client: profile, membership/PT details, sessions, payments, review
-- Firebase Authentication + Firestore
-- Responsive dark / lime premium UI
+A custom Firebase-ready gym management web app built without Lovable.
 
-## Run
-This is a static app. You can deploy the folder directly to Vercel/Netlify/GitHub Pages.
-For local testing, use any static server (for example VS Code Live Server).
+## Included
+- Premium FIT CULTURE dark/lime responsive interface
+- Firebase Email/Password login
+- Role-based Admin / Trainer / Client workspaces
+- Admin dashboard, client directory, trainer roster, memberships, payments and reviews
+- Add/edit/delete client records
+- Add trainers, memberships and payment records
+- Trainer assigned-client workspace and session completion
+- Client dashboard, profile, sessions, payments and review submission
+- Firestore security rules
 
 ## Firebase setup
-1. Firebase Console → Create project.
-2. Build → Authentication → Sign-in method → enable Email/Password.
-3. Build → Firestore Database → Create database.
-4. Project settings → Your apps → Web app → register app.
-5. Copy the Firebase config into `js/app.js`.
-6. In Authentication → Users, create your first admin email/password.
-7. In Firestore create collection `users`, with document ID equal to that Firebase user's UID:
-   { "name": "Gym Admin", "role": "admin" }
-8. Deploy the site.
-9. Create trainer/client Auth accounts in Firebase and add matching `users` documents:
-   trainer: {name, role:"trainer"}
-   client: {name, role:"client"}
-10. Add records to `clients`, `trainers`, `memberships`, `payments`, `sessions`, `reviews`.
+1. Firebase Console → Authentication → Sign-in method → enable Email/Password.
+2. Firebase Console → Firestore Database → Create database.
+3. Project Settings → Your apps → Web app.
+4. The supplied Firebase web configuration is already placed in `js/app.js`.
+5. Create an Authentication user for the gym admin.
+6. In Firestore create `users/{AUTH_USER_UID}` with:
+   `{ "name": "FIT CULTURE Admin", "role": "admin" }`
+7. Publish `firestore.rules` from this folder in Firestore Rules.
+8. Deploy the folder to Vercel/Netlify/GitHub Pages.
 
-Important: do NOT put a service-account private key in this frontend. Firebase web config is okay to expose; Firestore Security Rules must enforce access.
+For trainers/clients, create their Authentication accounts and then create matching `users/{UID}` documents. Link a client record with `userId` equal to the client's Firebase Authentication UID. Link trainer-owned client records with `trainerId` equal to the trainer's Firebase Authentication UID.
 
-## Firestore fields used by this starter
-clients: name, clientNumber, phone, address, membership, membershipExpiry, membershipStart, ptPlan, trainer, trainerId, sessionsCompleted, pendingSessions, carryForward, expectedPayment, paymentDueDate, gymTiming, status, userId, email
-trainers: name, speciality, phone, status
-memberships: clientName, plan, startDate, expiryDate, status
-payments: clientName, clientId, clientEmail, amount, dueDate, status, note
-sessions: clientName, trainerId, date, type, status
-reviews: clientId, clientName, rating, text, createdAt
-users: name, role
+## Collections
+- users
+- clients
+- trainers
+- memberships
+- payments
+- sessions
+- reviews
+
+## Important
+The website does not display Firebase configuration, Storage, database setup details, or developer instructions to gym users. Firebase is only the backend layer.
