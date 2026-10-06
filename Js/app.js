@@ -1,105 +1,119 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, query, where, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-/* 1) Paste your Firebase Web App config here. */
 const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT.firebasestorage.app",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyDfnG0hHvPPjp7UYaAZkneSw7Zd5fNmM2U",
+  authDomain: "fit-culture-603d0.firebaseapp.com",
+  projectId: "fit-culture-603d0",
+  storageBucket: "fit-culture-603d0.firebasestorage.app",
+  messagingSenderId: "50470178183",
+  appId: "1:50470178183:web:9952d99c5546999a2b1722",
+  measurementId: "G-K7DBQPBXVE"
 };
 
-const configured = firebaseConfig.apiKey !== "PASTE_API_KEY";
-const app = configured ? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+const loginView = $("loginView"), appView = $("appView"), content = $("content");
+let currentUser = null, currentProfile = null;
 
-const $=id=>document.getElementById(id), loginView=$("loginView"), appView=$("appView"), content=$("content");
-let currentUser=null, currentProfile=null;
+function toast(msg, error=false){ const t=$("toast"); t.textContent=msg; t.className=error?"show error":"show"; clearTimeout(window.__toast); window.__toast=setTimeout(()=>t.className="",3000); }
+function esc(v=""){ return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
+function fmtMoney(n){ return "₹"+Number(n||0).toLocaleString("en-IN"); }
+function initials(n){ return (n||"User").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase(); }
+function dateNow(){ return new Date().toISOString().slice(0,10); }
+function statusBadge(s="Active"){ const x=String(s); const cls=x.toLowerCase().includes("expired")?"expired":x.toLowerCase().includes("due")||x.toLowerCase().includes("pending")?"due":""; return `<span class="badge ${cls}">${esc(x)}</span>`; }
 
-function toast(msg,error=false){const t=$("toast");t.textContent=msg;t.className=error?"show error":"show";setTimeout(()=>t.className="",3200)}
-function esc(v=""){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function fmtMoney(n){return "₹"+Number(n||0).toLocaleString("en-IN")}
-function initials(n){return (n||"User").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
-
-$("togglePass").onclick=()=>{$("password").type=$("password").type==="password"?"text":"password";$("togglePass").textContent=$("password").type==="password"?"Show":"Hide"}
-$("loginForm").addEventListener("submit",async e=>{
- e.preventDefault();
- if(!configured){toast("Add your Firebase config in js/app.js first.",true);return}
- try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);toast("Signed in");}
- catch(err){toast(err.code==="auth/invalid-credential"?"Invalid email or password.":"Login failed. Check Firebase Auth setup.",true)}
-});
+$("togglePass").onclick=()=>{ $("password").type=$("password").type==="password"?"text":"password"; $("togglePass").textContent=$("password").type==="password"?"Show":"Hide"; };
+$("loginForm").addEventListener("submit",async e=>{ e.preventDefault(); const btn=e.submitter; btn.disabled=true; btn.textContent="Signing in…"; try{ await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value); } catch(err){ toast(err.code==="auth/invalid-credential"?"Invalid email or password.":"Login failed. Check your Firebase Authentication setup.",true); } finally { btn.disabled=false; btn.innerHTML="Sign in <span>→</span>"; } });
 $("logout").onclick=()=>signOut(auth);
+$("mobileNavBtn").onclick=()=>$("appView").querySelector(".sidebar").classList.toggle("open");
+document.addEventListener("click",e=>{ if(e.target.matches("[data-close-modal]")) closeModal(); if(e.target.closest("#nav button")) $("appView").querySelector(".sidebar")?.classList.remove("open"); });
 
-async function getProfile(uid){
- const snap=await getDoc(doc(db,"users",uid));
- if(!snap.exists()) throw new Error("No role profile found for this account.");
- return {id:snap.id,...snap.data()};
-}
-function setNav(role){
- const tpl=$(role==="admin"?"adminNav":role==="trainer"?"trainerNav":"clientNav");
- $("nav").innerHTML=tpl.innerHTML;
- $("nav").querySelectorAll("button").forEach(b=>b.onclick=()=>render(b.dataset.page));
-}
-function showApp(){
- loginView.classList.add("hidden");appView.classList.remove("hidden");
- $("rolePill").textContent=(currentProfile.role||"client").toUpperCase();
- $("userName").textContent=currentProfile.name||currentUser.email;
- $("userRole").textContent=currentProfile.role||"client";
- $("avatar").textContent=initials(currentProfile.name||currentUser.email);
- setNav(currentProfile.role);
- render("dashboard");
-}
-async function getCol(name){const s=await getDocs(collection(db,name));return s.docs.map(d=>({id:d.id,...d.data()}))}
-function navActive(page){$("nav").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.page===page))}
-function layout(title,kicker="GYM MANAGEMENT"){ $("pageTitle").textContent=title;$("pageKicker").textContent=kicker }
+function openModal(title,body,kicker="FIT CULTURE"){ $("modalTitle").textContent=title; $("modalKicker").textContent=kicker; $("modalBody").innerHTML=body; $("modal").classList.remove("hidden"); }
+function closeModal(){ $("modal").classList.add("hidden"); $("modalBody").innerHTML=""; }
+window.closeModal=closeModal;
 
-async function render(page){
- navActive(page);
- const role=currentProfile.role;
- if(role==="admin") return renderAdmin(page);
- if(role==="trainer") return renderTrainer(page);
- return renderClient(page);
-}
+async function getProfile(uid){ const snap=await getDoc(doc(db,"users",uid)); if(!snap.exists()) throw new Error("This account has no role profile yet. Ask the gym admin to create its user profile."); return {id:snap.id,...snap.data()}; }
+async function getCol(name){ const s=await getDocs(collection(db,name)); return s.docs.map(d=>({id:d.id,...d.data()})); }
+async function getWhere(name,field,op,value){ const s=await getDocs(query(collection(db,name),where(field,op,value))); return s.docs.map(d=>({id:d.id,...d.data()})); }
+
+function setNav(role){ const tpl=$(role==="admin"?"adminNav":role==="trainer"?"trainerNav":"clientNav"); $("nav").innerHTML=tpl.innerHTML; $("nav").querySelectorAll("button").forEach(b=>b.onclick=()=>render(b.dataset.page)); }
+function showApp(){ loginView.classList.add("hidden"); appView.classList.remove("hidden"); $("rolePill").textContent=(currentProfile.role||"client").toUpperCase(); $("userName").textContent=currentProfile.name||currentUser.email; $("userRole").textContent=currentProfile.role||"client"; $("avatar").textContent=initials(currentProfile.name||currentUser.email); setNav(currentProfile.role); render("dashboard"); }
+function navActive(page){ $("nav").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.page===page)); }
+function layout(title,kicker="GYM MANAGEMENT"){ $("pageTitle").textContent=title; $("pageKicker").textContent=kicker; }
+function loading(){ content.innerHTML=`<div class="card loading">Loading your workspace…</div>`; }
+function simpleTable(headers,rows,fn){ if(!rows.length)return `<div class="empty">No records found yet.</div>`; return `<div class="table-wrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(x=>`<tr>${fn(x).map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
+function clientTable(rows,admin=false){ return simpleTable(["Client","Number","Membership","Expiry","Status",...(admin?["Action"]:[])],rows,x=>[`<b>${esc(x.name||"—")}</b><div class="muted small">${esc(x.phone||"")}</div>`,esc(x.clientNumber||"—"),esc(x.membership||"—"),esc(x.membershipExpiry||"—"),statusBadge(x.status||"Active"),...(admin?[`<div class="actions"><button class="ghost" onclick="window.editClient('${x.id}')">Edit</button><button class="ghost danger" onclick="window.removeRecord('clients','${x.id}','client')">Delete</button></div>`]:[])]); }
+
+function formField(label,id,value="",type="text",extra=""){ return `<div class="field"><label>${label}<input id="${id}" type="${type}" value="${esc(value)}" ${extra}></label></div>`; }
+function selectField(label,id,options,value=""){ return `<div class="field"><label>${label}<select id="${id}">${options.map(o=>`<option value="${esc(o)}" ${o===value?"selected":""}>${esc(o)}</option>`).join("")}</select></label></div>`; }
+
+window.addClient=()=>openModal("Add client",`<form id="clientForm"><div class="field-grid">${formField("Client name","cName","","text","required")}${formField("Client number","cNumber","GYM-","text","required")}${formField("Phone","cPhone")}${formField("Email","cEmail","","email")}${formField("Address","cAddress")}${formField("Membership","cMembership","","text")}${formField("Membership start","cStart",dateNow(),"date")}${formField("Membership expiry","cExpiry","","date")}${formField("PT plan","cPT")}${formField("Personal trainer","cTrainer")}${formField("Gym timing","cTiming","7:00 AM")}${selectField("Status","cStatus",["Active","Paused","Expired"],"Active")}</div><div class="form-actions"><button type="button" class="ghost" data-close-modal>Cancel</button><button class="primary" type="submit">Save client</button></div></form>`);
+$(document).on?.();
+
+document.addEventListener("submit",async e=>{
+ if(e.target.id==="clientForm"){ e.preventDefault(); const g=id=>$(id).value.trim(); try{ await addDoc(collection(db,"clients"),{name:g("cName"),clientNumber:g("cNumber"),phone:g("cPhone"),email:g("cEmail"),address:g("cAddress"),membership:g("cMembership"),membershipStart:g("cStart"),membershipExpiry:g("cExpiry"),ptPlan:g("cPT"),trainer:g("cTrainer"),gymTiming:g("cTiming"),status:g("cStatus"),sessionsCompleted:0,pendingSessions:0,carryForward:0,createdAt:serverTimestamp()}); closeModal();toast("Client added");render("clients"); }catch(err){toast(err.message,true)} }
+ if(e.target.id==="trainerForm"){ e.preventDefault(); const g=id=>$(id).value.trim(); try{ await addDoc(collection(db,"trainers"),{name:g("tName"),speciality:g("tSpeciality"),phone:g("tPhone"),status:g("tStatus"),createdAt:serverTimestamp()}); closeModal();toast("Trainer added");render("trainers"); }catch(err){toast(err.message,true)} }
+ if(e.target.id==="membershipForm"){ e.preventDefault(); const g=id=>$(id).value.trim(); try{ await addDoc(collection(db,"memberships"),{clientName:g("mClient"),plan:g("mPlan"),startDate:g("mStart"),expiryDate:g("mExpiry"),status:g("mStatus"),createdAt:serverTimestamp()}); closeModal();toast("Membership added");render("memberships"); }catch(err){toast(err.message,true)} }
+ if(e.target.id==="paymentForm"){ e.preventDefault(); const g=id=>$(id).value.trim(); try{ await addDoc(collection(db,"payments"),{clientName:g("pClient"),clientId:g("pClientId"),clientEmail:g("pEmail"),amount:Number(g("pAmount")||0),dueDate:g("pDue"),status:g("pStatus"),note:g("pNote"),createdAt:serverTimestamp()}); closeModal();toast("Payment saved");render("payments"); }catch(err){toast(err.message,true)} }
+ if(e.target.id==="reviewForm"){ e.preventDefault(); const g=id=>$(id).value.trim(); try{ const c=await findClientForUser(); await addDoc(collection(db,"reviews"),{clientId:c.id,clientName:c.name,rating:Number($("rating").value),text:g("reviewText"),createdAt:serverTimestamp()}); toast("Review submitted");render("review"); }catch(err){toast(err.message,true)} }
+});
+
+window.addTrainer=()=>openModal("Add trainer",`<form id="trainerForm"><div class="field-grid">${formField("Trainer name","tName","","text","required")}${formField("Speciality","tSpeciality")}${formField("Phone","tPhone")}${selectField("Status","tStatus",["Active","On leave","Inactive"],"Active")}</div><div class="form-actions"><button type="button" class="ghost" data-close-modal>Cancel</button><button class="primary">Save trainer</button></div></form>`);
+window.addMembership=()=>openModal("Create membership",`<form id="membershipForm"><div class="field-grid">${formField("Client name","mClient","","text","required")}${formField("Plan","mPlan","3 Months")}${formField("Start date","mStart",dateNow(),"date")}${formField("Expiry date","mExpiry","","date")}${selectField("Status","mStatus",["Active","Expired","Paused"],"Active")}</div><div class="form-actions"><button type="button" class="ghost" data-close-modal>Cancel</button><button class="primary">Create membership</button></div></form>`);
+window.addPayment=()=>openModal("Record payment",`<form id="paymentForm"><div class="field-grid">${formField("Client name","pClient","","text","required")}${formField("Client user ID (optional)","pClientId")}${formField("Client email","pEmail","","email")}${formField("Amount","pAmount","","number","min=0")}${formField("Due date","pDue",dateNow(),"date")}${selectField("Status","pStatus",["paid","due"],"paid")}<div class="field full"><label>Note<textarea id="pNote" placeholder="Payment note"></textarea></label></div></div><div class="form-actions"><button type="button" class="ghost" data-close-modal>Cancel</button><button class="primary">Save payment</button></div></form>`);
+
+window.editClient=async id=>{ try{ const s=await getDoc(doc(db,"clients",id)); if(!s.exists())return; const x={id,...s.data()}; openModal("Edit client",`<form id="editClientForm"><div class="field-grid">${formField("Client name","ecName",x.name,"text","required")}${formField("Client number","ecNumber",x.clientNumber)}${formField("Phone","ecPhone",x.phone)}${formField("Membership","ecMembership",x.membership)}${formField("Membership expiry","ecExpiry",x.membershipExpiry,"date")}${formField("PT plan","ecPT",x.ptPlan)}${formField("Trainer","ecTrainer",x.trainer)}${formField("Gym timing","ecTiming",x.gymTiming)}${formField("Expected payment","ecPayment",x.expectedPayment||0,"number")}${selectField("Status","ecStatus",["Active","Paused","Expired"],x.status||"Active")}</div><div class="form-actions"><button type="button" class="ghost" data-close-modal>Cancel</button><button class="primary">Update client</button></div></form>`); $("editClientForm").onsubmit=async e=>{e.preventDefault();const g=id=>$(id).value.trim();await updateDoc(doc(db,"clients",x.id),{name:g("ecName"),clientNumber:g("ecNumber"),phone:g("ecPhone"),membership:g("ecMembership"),membershipExpiry:g("ecExpiry"),ptPlan:g("ecPT"),trainer:g("ecTrainer"),gymTiming:g("ecTiming"),expectedPayment:Number(g("ecPayment")||0),status:g("ecStatus"),updatedAt:serverTimestamp()});closeModal();toast("Client updated");render("clients");}; }catch(err){toast(err.message,true)} };
+window.removeRecord=async(collectionName,id,label)=>{ if(!confirm(`Delete this ${label}? This cannot be undone.`))return; try{await deleteDoc(doc(db,collectionName,id));toast(`${label[0].toUpperCase()+label.slice(1)} deleted`);render(collectionName==="clients"?"clients":collectionName==="trainers"?"trainers":collectionName==="memberships"?"memberships":collectionName==="payments"?"payments":"reviews");}catch(e){toast(e.message,true)} };
+
+async function findClientForUser(){ const rows=await getWhere("clients","userId","==",currentUser.uid); if(rows[0])return rows[0]; const byEmail=await getWhere("clients","email","==",currentUser.email); if(byEmail[0])return byEmail[0]; throw new Error("Your client profile is not linked yet. Ask the gym admin to add your user ID to the client record."); }
+
+async function render(page){ navActive(page); if(currentProfile.role==="admin")return renderAdmin(page); if(currentProfile.role==="trainer")return renderTrainer(page); return renderClient(page); }
 
 async function renderAdmin(page){
+ loading();
  try{
-  if(page==="dashboard"){layout("Overview");const [c,t,p,m,r]=await Promise.all(["clients","trainers","payments","memberships","reviews"].map(getCol));
-   const due=p.filter(x=>x.status==="due").reduce((a,x)=>a+Number(x.amount||0),0);
-   content.innerHTML=`<div class="hero"><div class="card"><p class="eyebrow">FIT CULTURE</p><h2>Run your gym<br><span class="accent">smarter.</span></h2><p class="muted">Manage members, trainers, memberships, PT sessions, payments and reviews from one place.</p></div><div class="card"><p class="stat-label">Outstanding payments</p><div class="stat-value">${fmtMoney(due)}</div><p class="muted">Based on payment records marked due.</p></div></div>
+  if(page==="dashboard"){
+   layout("Overview"); const [c,t,p,m,r]=await Promise.all([getCol("clients"),getCol("trainers"),getCol("payments"),getCol("memberships"),getCol("reviews")]);
+   const due=p.filter(x=>x.status==="due").reduce((a,x)=>a+Number(x.amount||0),0), active=c.filter(x=>String(x.status||"").toLowerCase()==="active").length, exp=c.filter(x=>String(x.status||"").toLowerCase()==="expired").length;
+   content.innerHTML=`<div class="hero"><div class="card hero-main"><p class="eyebrow">FIT CULTURE · ADMIN</p><h2>Run your gym<br><span class="accent">smarter.</span></h2><p class="muted">A clean command centre for members, trainers, memberships, sessions, payments and feedback.</p><div class="quick-grid"><div class="quick"><b>${active} active members</b><span>Currently marked active</span></div><div class="quick"><b>${exp} expired</b><span>Needs follow-up</span></div></div></div><div class="card"><div class="stat-label">Outstanding payments</div><div class="stat-value">${fmtMoney(due)}</div><p class="muted">${p.filter(x=>x.status==="due").length} payment records marked due.</p><button class="ghost" onclick="window.go('payments')">Open payments →</button></div></div>
    <div class="grid stats section"><div class="card"><div class="stat-label">Clients</div><div class="stat-value">${c.length}</div></div><div class="card"><div class="stat-label">Trainers</div><div class="stat-value">${t.length}</div></div><div class="card"><div class="stat-label">Memberships</div><div class="stat-value">${m.length}</div></div><div class="card"><div class="stat-label">Reviews</div><div class="stat-value">${r.length}</div></div></div>
-   <div class="section card"><div class="section-head"><h3>Recent clients</h3><button class="ghost" onclick="window.go('clients')">View all</button></div>${clientTable(c.slice(0,6))}</div>`;return}
-  if(page==="clients"){layout("Clients");const c=await getCol("clients");content.innerHTML=`<div class="section card"><div class="section-head"><h3>Client directory</h3><div class="search"><input id="clientSearch" placeholder="Search name or client no."></div></div><div id="clientTable">${clientTable(c)}</div></div>`;$("clientSearch").oninput=e=>{$("clientTable").innerHTML=clientTable(c.filter(x=>(x.name+" "+x.clientNumber).toLowerCase().includes(e.target.value.toLowerCase()))) };return}
-  if(page==="trainers"){layout("Trainers");const t=await getCol("trainers");content.innerHTML=`<div class="section card">${simpleTable(["Name","Speciality","Phone","Status"],t,x=>[x.name,x.speciality||"—",x.phone||"—",`<span class="badge">${esc(x.status||"Active")}</span>`])}</div>`;return}
-  if(page==="memberships"){layout("Memberships");const m=await getCol("memberships");content.innerHTML=`<div class="section card">${simpleTable(["Client","Plan","Start","Expiry","Status"],m,x=>[x.clientName,x.plan,x.startDate,x.expiryDate,`<span class="badge ${x.status==="expired"?"expired":""}">${esc(x.status||"Active")}</span>`])}</div>`;return}
-  if(page==="payments"){layout("Payments");const p=await getCol("payments");content.innerHTML=`<div class="section card">${simpleTable(["Client","Amount","Due date","Status"],p,x=>[x.clientName,fmtMoney(x.amount),x.dueDate,`<span class="badge ${x.status==="due"?"due":""}">${esc(x.status||"paid")}</span>`])}</div>`;return}
-  if(page==="reviews"){layout("Reviews");const r=await getCol("reviews");content.innerHTML=`<div class="section card">${simpleTable(["Client","Rating","Review","Created"],r,x=>[x.clientName,`<span class="review-stars">${"★".repeat(Number(x.rating||0))}</span>`,esc(x.text||""),x.createdAt?.toDate?x.createdAt.toDate().toLocaleDateString("en-IN"):"—"])}</div>`;return}
- }catch(e){content.innerHTML=`<div class="card empty">${esc(e.message)}</div>`}
+   <div class="section card"><div class="section-head"><div><p class="eyebrow">DIRECTORY</p><h3>Recent clients</h3></div><div class="toolbar"><button class="ghost" onclick="window.addClient()">+ Add client</button><button class="ghost" onclick="window.go('clients')">View all</button></div></div>${clientTable(c.slice(0,7),true)}</div>`;return;
+  }
+  if(page==="clients"){ layout("Clients","MEMBER MANAGEMENT"); const c=await getCol("clients"); content.innerHTML=`<div class="section card"><div class="section-head"><div><p class="eyebrow">MEMBERS</p><h3>Client directory</h3></div><div class="toolbar"><div class="search"><input id="clientSearch" placeholder="Search name or client no."></div><button class="primary" onclick="window.addClient()">+ Add client</button></div></div><div id="clientTable">${clientTable(c,true)}</div></div>`;$("clientSearch").oninput=e=>$("clientTable").innerHTML=clientTable(c.filter(x=>(x.name+" "+x.clientNumber+" "+x.phone).toLowerCase().includes(e.target.value.toLowerCase())),true);return; }
+  if(page==="trainers"){ layout("Trainers","TEAM MANAGEMENT"); const t=await getCol("trainers"); content.innerHTML=`<div class="section card"><div class="section-head"><div><p class="eyebrow">TEAM</p><h3>Trainer roster</h3></div><button class="primary" onclick="window.addTrainer()">+ Add trainer</button></div>${simpleTable(["Name","Speciality","Phone","Status"],t,x=>[`<b>${esc(x.name)}</b>`,esc(x.speciality||"—"),esc(x.phone||"—"),statusBadge(x.status||"Active")])}</div>`;return; }
+  if(page==="memberships"){ layout("Memberships","PLANS & VALIDITY"); const m=await getCol("memberships"); content.innerHTML=`<div class="section card"><div class="section-head"><div><p class="eyebrow">PLANS</p><h3>Membership records</h3></div><button class="primary" onclick="window.addMembership()">+ Create membership</button></div>${simpleTable(["Client","Plan","Start","Expiry","Status"],m,x=>[esc(x.clientName),esc(x.plan),esc(x.startDate),esc(x.expiryDate),statusBadge(x.status||"Active")])}</div>`;return; }
+  if(page==="payments"){ layout("Payments","COLLECTIONS"); const p=await getCol("payments"); content.innerHTML=`<div class="section card"><div class="section-head"><div><p class="eyebrow">FINANCE</p><h3>Payment history</h3></div><button class="primary" onclick="window.addPayment()">+ Record payment</button></div>${simpleTable(["Client","Amount","Due date","Status","Note"],p,x=>[`<b>${esc(x.clientName)}</b>`,fmtMoney(x.amount),esc(x.dueDate||"—"),statusBadge(x.status||"paid"),esc(x.note||"—")])}</div>`;return; }
+  if(page==="reviews"){ layout("Reviews","MEMBER FEEDBACK"); const r=await getCol("reviews"); content.innerHTML=`<div class="section card"><div class="section-head"><div><p class="eyebrow">FEEDBACK</p><h3>Client reviews</h3></div></div>${simpleTable(["Client","Rating","Review","Created"],r,x=>[`<b>${esc(x.clientName)}</b>`,`<span class="review-stars">${"★".repeat(Number(x.rating||0))}${"☆".repeat(Math.max(0,5-Number(x.rating||0)))}</span>`,esc(x.text||""),x.createdAt?.toDate?x.createdAt.toDate().toLocaleDateString("en-IN"):"—"])}</div>`;return; }
+ }catch(e){ content.innerHTML=`<div class="card empty">${esc(e.message)}</div>`; }
 }
-function clientTable(rows){return simpleTable(["Client","Number","Membership","Expiry","Status"],rows,x=>[`<b>${esc(x.name)}</b>`,esc(x.clientNumber),esc(x.membership||"—"),esc(x.membershipExpiry||"—"),`<span class="badge ${x.status==="Expired"?"expired":""}">${esc(x.status||"Active")}</span>`])}
-function simpleTable(headers,rows,fn){if(!rows.length)return `<div class="empty">No records found yet.</div>`;return `<div class="table-wrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(x=>`<tr>${fn(x).map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
 
 async function renderTrainer(page){
- if(page==="dashboard"){layout("Trainer Dashboard");const clients=await getCol("clients");const mine=clients.filter(x=>x.trainerId===currentUser.uid||x.trainer===currentProfile.name);content.innerHTML=`<div class="grid stats"><div class="card"><div class="stat-label">Assigned clients</div><div class="stat-value">${mine.length}</div></div><div class="card"><div class="stat-label">Sessions completed</div><div class="stat-value">${mine.reduce((a,x)=>a+Number(x.sessionsCompleted||0),0)}</div></div><div class="card"><div class="stat-label">Pending sessions</div><div class="stat-value">${mine.reduce((a,x)=>a+Number(x.pendingSessions||0),0)}</div></div></div><div class="section card">${clientTable(mine)}</div>`;return}
- if(page==="clients"){layout("My Clients");const clients=(await getCol("clients")).filter(x=>x.trainerId===currentUser.uid||x.trainer===currentProfile.name);content.innerHTML=`<div class="card">${clientTable(clients)}</div>`;return}
- if(page==="sessions"){layout("Sessions");const s=(await getCol("sessions")).filter(x=>x.trainerId===currentUser.uid);content.innerHTML=`<div class="card">${simpleTable(["Client","Date","Type","Status"],s,x=>[x.clientName,x.date,x.type||"PT",`<span class="badge ${x.status==="pending"?"due":""}">${esc(x.status||"pending")}</span>`])}</div>`;return}
+ loading();
+ try{
+  const mine=await getWhere("clients","trainerId","==",currentUser.uid);
+  if(page==="dashboard"){ layout("Trainer Dashboard","COACH WORKSPACE"); const sessions=await getWhere("sessions","trainerId","==",currentUser.uid); content.innerHTML=`<div class="hero"><div class="card hero-main"><p class="eyebrow">COACH WORKSPACE</p><h2>Coach with<br><span class="accent">clarity.</span></h2><p class="muted">See your assigned members and keep every PT session on track.</p></div><div class="card"><div class="stat-label">Upcoming / pending</div><div class="stat-value">${sessions.filter(x=>x.status!=="completed").length}</div><p class="muted">Sessions that still need attention.</p></div></div><div class="grid stats section"><div class="card"><div class="stat-label">Assigned clients</div><div class="stat-value">${mine.length}</div></div><div class="card"><div class="stat-label">Sessions completed</div><div class="stat-value">${mine.reduce((a,x)=>a+Number(x.sessionsCompleted||0),0)}</div></div><div class="card"><div class="stat-label">Pending sessions</div><div class="stat-value">${mine.reduce((a,x)=>a+Number(x.pendingSessions||0),0)}</div></div><div class="card"><div class="stat-label">Carry forward</div><div class="stat-value">${mine.reduce((a,x)=>a+Number(x.carryForward||0),0)}</div></div></div><div class="section card">${clientTable(mine)}</div>`;return; }
+  if(page==="clients"){ layout("My Clients","ASSIGNED MEMBERS"); content.innerHTML=`<div class="card">${clientTable(mine)}</div>`;return; }
+  if(page==="sessions"){ layout("Sessions","PERSONAL TRAINING"); const s=await getWhere("sessions","trainerId","==",currentUser.uid); content.innerHTML=`<div class="section card">${simpleTable(["Client","Date","Type","Status","Action"],s,x=>[esc(x.clientName),esc(x.date||"—"),esc(x.type||"PT"),statusBadge(x.status||"pending"),x.status!=="completed"?`<button class="ghost" onclick="window.completeSession('${x.id}','${esc(x.clientId||"")}')">Mark completed</button>`:"✓ Completed"])}</div>`;return; }
+ }catch(e){ content.innerHTML=`<div class="card empty">${esc(e.message)}</div>`; }
 }
 
+window.completeSession=async(id,clientId)=>{ try{ await updateDoc(doc(db,"sessions",id),{status:"completed",completedAt:serverTimestamp()}); if(clientId){const s=await getDoc(doc(db,"clients",clientId));if(s.exists()){const c=s.data();await updateDoc(doc(db,"clients",clientId),{sessionsCompleted:Number(c.sessionsCompleted||0)+1,pendingSessions:Math.max(0,Number(c.pendingSessions||0)-1)});}} toast("Session completed");render("sessions"); }catch(e){toast(e.message,true)} };
+
 async function renderClient(page){
- const c=(await getCol("clients")).find(x=>x.userId===currentUser.uid||x.email===currentUser.email);
- if(!c){content.innerHTML='<div class="card empty">Your client profile has not been linked yet. Ask the gym admin to add your userId to the client record.</div>';return}
- if(page==="dashboard"){layout("My Dashboard");content.innerHTML=`<div class="hero"><div class="card"><p class="eyebrow">MEMBER</p><h2>${esc(c.name)}</h2><p class="muted">${esc(c.clientNumber||"")} · ${esc(c.status||"Active")}</p></div><div class="card"><div class="stat-label">Membership expiry</div><div class="stat-value">${esc(c.membershipExpiry||"—")}</div></div></div><div class="grid stats section"><div class="card"><div class="stat-label">Membership</div><div class="stat-value">${esc(c.membership||"—")}</div></div><div class="card"><div class="stat-label">PT plan</div><div class="stat-value">${esc(c.ptPlan||"—")}</div></div><div class="card"><div class="stat-label">Completed</div><div class="stat-value">${Number(c.sessionsCompleted||0)}</div></div><div class="card"><div class="stat-label">Pending</div><div class="stat-value">${Number(c.pendingSessions||0)}</div></div></div>`;return}
- if(page==="profile"){layout("My Profile");content.innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><tbody>${[["Client name",c.name],["Client number",c.clientNumber],["Phone",c.phone],["Address",c.address],["Gym timing",c.gymTiming],["Personal trainer",c.trainer],["Status",c.status]].map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1]||"—")}</td></tr>`).join("")}</tbody></table></div></div>`;return}
- if(page==="sessions"){layout("My Sessions");content.innerHTML=`<div class="grid stats"><div class="card"><div class="stat-label">Completed</div><div class="stat-value">${c.sessionsCompleted||0}</div></div><div class="card"><div class="stat-label">Pending</div><div class="stat-value">${c.pendingSessions||0}</div></div><div class="card"><div class="stat-label">Carry forward</div><div class="stat-value">${c.carryForward||0}</div></div></div>`;return}
- if(page==="payments"){layout("Payments");const p=(await getCol("payments")).filter(x=>x.clientId===c.id||x.clientEmail===currentUser.email);content.innerHTML=`<div class="card">${simpleTable(["Amount","Due date","Status","Note"],p,x=>[fmtMoney(x.amount),x.dueDate,`<span class="badge ${x.status==="due"?"due":""}">${esc(x.status||"paid")}</span>`,esc(x.note||"—")])}</div>`;return}
- if(page==="review"){layout("Write Review");content.innerHTML=`<div class="card"><p class="muted">Share feedback about the gym and your personal trainer.</p><form id="reviewForm"><label>Rating<select id="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label><label>Review<textarea id="reviewText" rows="5" placeholder="Tell us about your experience" required></textarea></label><button class="primary" type="submit">Submit review</button></form></div>`;$("reviewForm").onsubmit=async e=>{e.preventDefault();try{await addDoc(collection(db,"reviews"),{clientId:c.id,clientName:c.name,rating:Number($("rating").value),text:$("reviewText").value,createdAt:serverTimestamp()});toast("Review submitted");render("review")}catch(err){toast("Could not submit review",true)}}}
+ loading();
+ try{
+  const c=await findClientForUser();
+  if(page==="dashboard"){ layout("My Dashboard","MEMBER PORTAL"); const payments=await getWhere("payments","clientId","==",currentUser.uid); const due=payments.filter(x=>x.status==="due").reduce((a,x)=>a+Number(x.amount||0),0); content.innerHTML=`<div class="profile-grid"><div class="card hero-main"><div class="profile-highlight"><div class="big-avatar">${initials(c.name)}</div><div><p class="eyebrow">MEMBER</p><h2>${esc(c.name)}</h2><p class="muted">${esc(c.clientNumber||"—")} · ${statusBadge(c.status||"Active")}</p></div></div><div class="kv section"><div class="kv-item"><small>Membership</small><b>${esc(c.membership||"—")}</b></div><div class="kv-item"><small>Trainer</small><b>${esc(c.trainer||"—")}</b></div></div></div><div class="card"><div class="stat-label">Membership expiry</div><div class="stat-value">${esc(c.membershipExpiry||"—")}</div><p class="muted">Gym timing · ${esc(c.gymTiming||"—")}</p></div></div><div class="grid stats section"><div class="card"><div class="stat-label">PT plan</div><div class="stat-value">${esc(c.ptPlan||"—")}</div></div><div class="card"><div class="stat-label">Completed</div><div class="stat-value">${Number(c.sessionsCompleted||0)}</div></div><div class="card"><div class="stat-label">Pending</div><div class="stat-value">${Number(c.pendingSessions||0)}</div></div><div class="card"><div class="stat-label">Payment due</div><div class="stat-value">${fmtMoney(due)}</div></div></div>`;return; }
+  if(page==="profile"){ layout("My Profile","PERSONAL DETAILS"); content.innerHTML=`<div class="profile-grid"><div class="card"><div class="profile-highlight"><div class="big-avatar">${initials(c.name)}</div><div><p class="eyebrow">CLIENT PROFILE</p><h2>${esc(c.name)}</h2><p class="muted">${esc(c.clientNumber||"—")}</p></div></div><div class="kv section">${[["Phone",c.phone],["Email",c.email],["Address",c.address],["Gym timing",c.gymTiming],["Personal trainer",c.trainer],["Status",c.status]].map(([a,b])=>`<div class="kv-item"><small>${a}</small><b>${esc(b||"—")}</b></div>`).join("")}</div></div><div class="card"><p class="eyebrow">MEMBERSHIP</p><div class="stat-label">Plan</div><div class="stat-value">${esc(c.membership||"—")}</div><div class="section"><div class="stat-label">Valid until</div><b>${esc(c.membershipExpiry||"—")}</b></div><div class="section"><div class="stat-label">PT plan</div><b>${esc(c.ptPlan||"—")}</b></div></div></div>`;return; }
+  if(page==="sessions"){ layout("My Sessions","PERSONAL TRAINING"); const s=await getWhere("sessions","clientId","==",currentUser.uid); content.innerHTML=`<div class="grid stats"><div class="card"><div class="stat-label">Completed</div><div class="stat-value">${c.sessionsCompleted||0}</div></div><div class="card"><div class="stat-label">Pending</div><div class="stat-value">${c.pendingSessions||0}</div></div><div class="card"><div class="stat-label">Carry forward</div><div class="stat-value">${c.carryForward||0}</div></div></div><div class="section card">${simpleTable(["Date","Type","Trainer","Status"],s,x=>[esc(x.date||"—"),esc(x.type||"PT"),esc(c.trainer||"—"),statusBadge(x.status||"pending")])}</div>`;return; }
+  if(page==="payments"){ layout("Payments","PAYMENT HISTORY"); const p=await getWhere("payments","clientId","==",currentUser.uid); content.innerHTML=`<div class="card">${simpleTable(["Amount","Due date","Status","Note"],p,x=>[fmtMoney(x.amount),esc(x.dueDate||"—"),statusBadge(x.status||"paid"),esc(x.note||"—")])}</div>`;return; }
+  if(page==="review"){ layout("Write Review","YOUR FEEDBACK"); content.innerHTML=`<div class="card"><p class="eyebrow">FEEDBACK</p><h3>How was your experience?</h3><p class="muted">Rate the gym and share a short note for the FIT CULTURE team.</p><form id="reviewForm"><div class="field-grid"><div class="field"><label>Rating<select id="rating"><option value="5">5 — Excellent</option><option value="4">4 — Great</option><option value="3">3 — Good</option><option value="2">2 — Needs work</option><option value="1">1 — Poor</option></select></label></div><div class="field full"><label>Your review<textarea id="reviewText" placeholder="Tell us what you liked or what we can improve…" required></textarea></label></div></div><div class="form-actions"><button class="primary">Submit review</button></div></form></div>`;return; }
+ }catch(e){ content.innerHTML=`<div class="card empty">${esc(e.message)}</div>`; }
 }
 window.go=render;
 
-if(configured){
- onAuthStateChanged(auth,async u=>{if(!u){currentUser=null;loginView.classList.remove("hidden");appView.classList.add("hidden");return}
-  try{currentUser=u;currentProfile=await getProfile(u.uid);showApp()}catch(e){toast(e.message,true);await signOut(auth)}});
-}else{loginView.classList.remove("hidden");}
+onAuthStateChanged(auth,async u=>{ if(!u){currentUser=null;loginView.classList.remove("hidden");appView.classList.add("hidden");return;} try{currentUser=u;currentProfile=await getProfile(u.uid);showApp();}catch(e){toast(e.message,true);await signOut(auth);} });
